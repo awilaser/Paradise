@@ -4,11 +4,12 @@
 /obj/item/reagent_containers/food/drinks
 	name = "drink"
 	desc = "Вкусняшка."
+	gender = MALE
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = null
 	container_type = OPENCONTAINER
 	consume_sound = 'sound/items/drink.ogg'
-	possible_transfer_amounts = list(5,10,15,20,25,30,50)
+	possible_transfer_amounts = list(5, 10, 15, 20, 25, 30, 50)
 	visible_transfer_rate = TRUE
 	resistance_flags = NONE
 	antable = FALSE
@@ -107,8 +108,8 @@
 				break
 		chugging = FALSE
 
-/obj/item/reagent_containers/food/drinks/afterattack(obj/target, mob/user, proximity, params)
-	if(!proximity)
+/obj/item/reagent_containers/food/drinks/afterattack(atom/target, mob/user, proximity_flag, list/modifiers, status)
+	if(!proximity_flag)
 		return
 
 	if(chugging)
@@ -217,13 +218,6 @@
 //Notes by Darem: Drinks are simply containers that start preloaded. Unlike condiments, the contents can be ingested directly
 //	rather then having to add it to something else first. They should only contain liquids. They have a default container size of 50.
 //	Formatting is the same as food.
-
-/obj/item/reagent_containers/food/drinks/coffee
-	name = "Robust Coffee"
-	desc = "Careful, the beverage you're about to enjoy is extremely hot."
-	icon_state = "coffee"
-	list_reagents = list("coffee" = 30)
-	resistance_flags = FREEZE_PROOF
 
 /obj/item/reagent_containers/food/drinks/ice
 	name = "ice cup"
@@ -414,7 +408,7 @@
 	. = ..()
 
 	if(reagents.total_volume)
-		var/image/filling = image('icons/obj/reagentfillings.dmi', "[icon_state]50")
+		var/mutable_appearance/filling = mutable_appearance('icons/obj/reagentfillings.dmi', "[icon_state]50")
 
 		switch(round(reagents.total_volume))
 			if(1 to 50)
@@ -429,7 +423,7 @@
 				filling.icon_state = "[icon_state]75"
 			if(76 to INFINITY)
 				filling.icon_state = "[icon_state]80"
-		filling.icon += mix_color_from_reagents(reagents.reagent_list)
+		filling.color = get_color_matrix_from_reagents(reagents.reagent_list)
 		. += filling
 
 	if(!is_open_container())
@@ -438,8 +432,8 @@
 /obj/item/reagent_containers/food/drinks/zaza/attack_self(mob/user)
 	if(!is_open_container())
 		container_type |= OPENCONTAINER
-		to_chat(user, span_notice("You put the lid on [src]."))
+		to_chat(user, span_notice("Вы сняли крышку с [src]."))
 	else
-		to_chat(user, span_notice("You take the lid off [src]."))
+		to_chat(user, span_notice("Вы надели крышку на [src]."))
 		container_type &= ~OPENCONTAINER
 	update_icon(UPDATE_OVERLAYS)

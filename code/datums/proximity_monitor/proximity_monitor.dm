@@ -23,6 +23,12 @@
 		current_range = range
 	set_host(_host)
 
+/datum/proximity_monitor/Destroy()
+	host?.proximity_monitor = null
+	host = null
+	hasprox_receiver = null
+	return ..()
+
 /datum/proximity_monitor/proc/set_host(atom/new_host, atom/new_receiver)
 	if(new_host == host)
 		return
@@ -52,11 +58,6 @@
 
 	qdel(src)
 
-/datum/proximity_monitor/Destroy()
-	host = null
-	hasprox_receiver = null
-	return ..()
-
 /datum/proximity_monitor/proc/set_range(range, force_rebuild = FALSE)
 	if(!force_rebuild && range == current_range)
 		return FALSE
@@ -82,7 +83,7 @@
 		return
 	ignore_if_not_on_turf = does_ignore
 	// Update the ignore_if_not_on_turf
-	AddComponent(/datum/component/connect_range, host, loc_connections, current_range, !ignore_if_not_on_turf)
+	AddComponent(/datum/component/connect_range, host, loc_connections, current_range, ignore_if_not_on_turf)
 
 /datum/proximity_monitor/proc/on_uncrossed()
 	SIGNAL_HANDLER

@@ -91,6 +91,9 @@
 	///a list of objectives that a player with this job could complete for space credit rewards
 	var/list/job_objectives = list()
 
+	///Owned cyborg skin permissions
+	var/list/cyborg_skin_permissions = list()
+
 /datum/mind/New(new_key)
 	key = new_key
 	soulOwner = src
@@ -271,6 +274,7 @@
 /datum/mind/proc/remove_objective(datum/objective/objective, qdel_on_remove = FALSE)
 	for(var/datum/antagonist/antag in antag_datums)
 		antag.objectives -= objective
+	objective.on_remove_objective(src)
 	objectives -= objective
 	if(qdel_on_remove)
 		qdel(objective)
@@ -339,12 +343,12 @@
 
 /datum/mind/proc/memory_edit_clockwork_silicon()
 	. = _memory_edit_header("clockwork")
-	if(istype(current, /mob/living/silicon/robot))
+	if(isrobot(current))
 		if(src in SSticker.mode.clockwork_cult)
 			. += "<a href='byond://?src=[UID()];siliclock=clearrobot'>no</a>|<b><font color='red'>CLOCKER</font></b>"
 		else
 			. += "<b>NO</b>|<a href='byond://?src=[UID()];siliclock=clockrobot'>clocker</a>"
-	else if(istype(current, /mob/living/silicon/ai))
+	else if(isAI(current))
 		if(src in SSticker.mode.clockwork_cult)
 			. += "no|<b><font color='red'>CLOCKER</font></b>"
 		else
@@ -1243,8 +1247,7 @@
 
 				var/datum/mind/targ = new_target
 				if(!istype(targ))
-					log_runtime(EXCEPTION("Invalid target for identity theft objective, cancelling"), src)
-					return
+					CRASH("Invalid target for identity theft objective, cancelling")
 
 				var/datum/objective/escape/escape_with_identity/identity_objective = new
 				identity_objective.owner = src
@@ -1272,6 +1275,7 @@
 			else
 				objectives.Insert(objective_pos[1], new_objective)
 		else
+			new_objective.on_add_objective(new_objective)
 			objectives += new_objective
 
 		log_admin("[key_name(usr)] has updated [key_name(current)]'s objectives: [new_objective]")

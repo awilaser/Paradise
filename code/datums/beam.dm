@@ -101,7 +101,9 @@
  */
 /datum/beam/proc/redrawing(atom/movable/mover, atom/oldloc, direction)
 	SIGNAL_HANDLER
-	if(origin && target && get_dist(origin,target)<max_distance && origin.z == target.z)
+	if(QDELING(src))
+		return
+	if(!QDELETED(origin) && !QDELETED(target) && get_dist(origin, target) < max_distance && origin.z == target.z)
 		QDEL_LIST(elements)
 		INVOKE_ASYNC(src, PROC_REF(Draw))
 	else
@@ -109,7 +111,9 @@
 
 /datum/beam/Destroy()
 	QDEL_LIST(elements)
-	QDEL_NULL(visuals)
+	if(visuals)
+		visuals.vis_contents.Cut()
+		QDEL_NULL(visuals)
 	UnregisterSignal(origin, COMSIG_MOVABLE_MOVED)
 	UnregisterSignal(target, COMSIG_MOVABLE_MOVED)
 	target = null
@@ -171,10 +175,10 @@
 		var/final_x = segment.x
 		var/final_y = segment.y
 		if(abs(Pixel_x)>32)
-			final_x += Pixel_x > 0 ? round(Pixel_x/32) : CEILING(Pixel_x/32, 1)
+			final_x += Pixel_x > 0 ? round(Pixel_x/32) : ceil(Pixel_x/32)
 			Pixel_x %= 32
 		if(abs(Pixel_y)>32)
-			final_y += Pixel_y > 0 ? round(Pixel_y/32) : CEILING(Pixel_y/32, 1)
+			final_y += Pixel_y > 0 ? round(Pixel_y/32) : ceil(Pixel_y/32)
 			Pixel_y %= 32
 
 		segment.forceMove(locate(final_x, final_y, segment.z))
@@ -192,6 +196,19 @@
 	owner = beam_owner
 	return ..()
 
+/obj/effect/ebeam/Destroy()
+	if(owner)
+		if(owner.elements)
+			owner.elements -= src
+		if(owner.visuals == src)
+			owner.visuals = null
+		owner = null
+
+	vis_contents.Cut()
+	transform = null
+	color = null
+	return ..()
+
 /obj/effect/ebeam/update_overlays()
 	. = ..()
 	if(!emissive)
@@ -200,10 +217,6 @@
 	emissive_overlay.transform = transform
 	emissive_overlay.alpha = alpha
 	. += emissive_overlay
-
-/obj/effect/ebeam/Destroy()
-	owner = null
-	return ..()
 
 /obj/effect/ebeam/singularity_pull()
 	return

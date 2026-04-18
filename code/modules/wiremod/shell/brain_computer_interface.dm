@@ -99,6 +99,16 @@
 
 	var/obj/item/organ/internal/cyberimp/brain/bci/bci
 
+/obj/item/circuit_component/bci_core/Destroy()
+	if(bci)
+		unregister_shell(bci)
+	QDEL_NULL(charge_action)
+	message = null
+	send_message_signal = null
+	show_charge_meter = null
+	user_port = null
+	return ..()
+
 /obj/item/circuit_component/bci_core/populate_ports()
 
 	message = add_input_port("Сообщение", PORT_TYPE_STRING, trigger = null)
@@ -107,9 +117,6 @@
 
 	user_port = add_output_port("Пользователь", PORT_TYPE_USER)
 
-/obj/item/circuit_component/bci_core/Destroy()
-	QDEL_NULL(charge_action)
-	return ..()
 
 /obj/item/circuit_component/bci_core/proc/update_charge_action()
 	CIRCUIT_TRIGGER
@@ -259,7 +266,9 @@
 
 	return ..()
 
-/datum/action/innate/bci_charge_action/Trigger(left_click = TRUE, trigger_flags)
+/datum/action/innate/bci_charge_action/Trigger(mob/clicker, trigger_flags)
+	if(!..())
+		return
 	var/obj/item/stock_parts/cell/cell = circuit_component.parent.cell
 
 	if(isnull(cell))
@@ -434,7 +443,7 @@
 
 	return CLICK_ACTION_SUCCESS
 
-/obj/machinery/bci_implanter/MouseDrop_T(mob/living/target, mob/living/user, params)
+/obj/machinery/bci_implanter/mouse_drop_receive(mob/living/target, mob/user, params)
 	if(!ishuman(target))
 		return
 

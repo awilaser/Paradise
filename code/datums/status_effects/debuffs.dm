@@ -188,7 +188,7 @@
 	bleed_underlay = mutable_appearance('icons/effects/bleed.dmi', "bleed[bleed_amount]")
 	var/icon_height = owner.get_cached_height()
 	bleed_overlay.pixel_w = -owner.pixel_x
-	bleed_overlay.pixel_z = FLOOR(icon_height * 0.25, 1)
+	bleed_overlay.pixel_z = floor(icon_height * 0.25)
 	bleed_overlay.transform = matrix() * (icon_height / ICON_SIZE_Y) //scale the bleed overlay's size based on the target's icon size
 	bleed_underlay.pixel_w = -owner.pixel_x
 	bleed_underlay.transform = matrix() * (icon_height / ICON_SIZE_Y) * 3
@@ -790,6 +790,33 @@
 	needs_update_stat = TRUE
 	traits_to_apply = list(TRAIT_INCAPACITATED, TRAIT_KNOCKEDOUT)
 
+/datum/status_effect/incapacitating/sleeping/on_apply()
+	. = ..()
+	if(!.)
+		return
+	if(HAS_TRAIT(owner, TRAIT_SLEEPIMMUNE))
+		tick_interval = STATUS_EFFECT_NO_TICK
+	RegisterSignal(owner, SIGNAL_ADDTRAIT(TRAIT_SLEEPIMMUNE), PROC_REF(on_owner_insomniac))
+	RegisterSignal(owner, SIGNAL_REMOVETRAIT(TRAIT_SLEEPIMMUNE), PROC_REF(on_owner_sleepy))
+
+/datum/status_effect/incapacitating/sleeping/on_remove()
+	UnregisterSignal(owner, list(SIGNAL_ADDTRAIT(TRAIT_SLEEPIMMUNE), SIGNAL_REMOVETRAIT(TRAIT_SLEEPIMMUNE)))
+	if(!HAS_TRAIT(owner, TRAIT_SLEEPIMMUNE))
+		tick_interval = initial(tick_interval)
+	. = ..()
+
+///If the mob is sleeping and gain the TRAIT_SLEEPIMMUNE we remove the TRAIT_KNOCKEDOUT and stop the tick() from happening
+/datum/status_effect/incapacitating/sleeping/proc/on_owner_insomniac(mob/living/source)
+	SIGNAL_HANDLER
+	REMOVE_TRAIT(owner, TRAIT_KNOCKEDOUT, TRAIT_STATUS_EFFECT(id))
+	tick_interval = STATUS_EFFECT_NO_TICK
+
+///If the mob has the TRAIT_SLEEPIMMUNE but somehow looses it we make him sleep and restart the tick()
+/datum/status_effect/incapacitating/sleeping/proc/on_owner_sleepy(mob/living/source)
+	SIGNAL_HANDLER
+	ADD_TRAIT(owner, TRAIT_KNOCKEDOUT, TRAIT_STATUS_EFFECT(id))
+	tick_interval = initial(tick_interval)
+
 /datum/status_effect/incapacitating/sleeping/update_duration(mob/living/carbon/human/new_owner, set_duration)
 	return set_duration
 
@@ -992,8 +1019,10 @@
 /datum/status_effect/transient/eye_blurry/on_apply()
 	if(!ishuman(owner))
 		return FALSE
+
 	// Refresh the blur when a client jumps into the mob, in case we get put on a clientless mob with no hud
-	RegisterSignal(owner, COMSIG_MOB_LOGIN, PROC_REF(update_blur))
+	RegisterSignal(owner, list(COMSIG_MOB_LOGIN, SIGNAL_ADDTRAIT(TRAIT_SIGHT_BYPASS), SIGNAL_REMOVETRAIT(TRAIT_SIGHT_BYPASS)), PROC_REF(update_blur))
+
 	// Apply initial blur
 	update_blur()
 	return TRUE

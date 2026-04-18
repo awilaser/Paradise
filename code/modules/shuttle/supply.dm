@@ -114,7 +114,7 @@
 
 	for(var/datum/supply_order/SO in SSshuttle.shoppinglist)
 		if(!SO.object)
-			throw EXCEPTION("Supply Order [SO] has no object associated with it.")
+			stack_trace("Supply Order [SO] has no object associated with it.")
 			continue
 
 		var/turf/T = pick_n_take(emptyTurfs)		//turf we will place it in
@@ -149,7 +149,7 @@
 	for(var/atom/movable/MA in areaInstance)
 		if(MA.anchored)
 			continue
-		if(istype(MA, /mob/dead))
+		if(isdead(MA))
 			continue
 		SSshuttle.sold_atoms += " [MA.declent_ru(NOMINATIVE)]"
 
@@ -157,7 +157,7 @@
 			quest_reward += SScargo_quests.check_delivery(MA)
 
 		// Must be in a crate (or a critter crate)!
-		if(istype(MA,/obj/structure/closet/crate) || istype(MA,/obj/structure/closet/critter))
+		if(is_crate(MA) || istype(MA,/obj/structure/closet/crate/critter))
 			SSshuttle.sold_atoms += ":"
 			if(!length(MA.contents))
 				SSshuttle.sold_atoms += " (пусто)"
@@ -234,8 +234,8 @@
 								objective.unit_completed(round(cost / 3))
 						msg += "[tech.name] — новые данные.<br>"
 
-		if(istype(MA, /obj/structure/closet/critter/mecha))
-			var/obj/structure/closet/critter/mecha/crate = MA
+		if(istype(MA, /obj/structure/closet/crate/critter/mecha))
+			var/obj/structure/closet/crate/critter/mecha/crate = MA
 			if(crate.console && crate.quest)
 				for(var/category in crate.quest.reward)
 					crate.quest.reward[category] -= crate.penalty
@@ -329,7 +329,7 @@
 		Crate:req_access = list(text2num(object.access))
 
 	//create the manifest slip
-	var/obj/item/paper/manifest/slip = new /obj/item/paper/manifest()
+	var/obj/item/paper/manifest/slip = new()
 	slip.erroneous = errors
 	slip.points = object.cost
 	slip.ordernumber = ordernum
@@ -376,8 +376,8 @@
 			A:amount = object.amount
 		slip.info += "<li>[A.declent_ru(NOMINATIVE)]</li>"	//add the item to the manifest (even if it was misplaced)
 
-	if(istype(Crate, /obj/structure/closet/critter)) // critter crates do not actually spawn mobs yet and have no contains var, but the manifest still needs to list them
-		var/obj/structure/closet/critter/CritCrate = Crate
+	if(istype(Crate, /obj/structure/closet/crate/critter)) // critter crates do not actually spawn mobs yet and have no contains var, but the manifest still needs to list them
+		var/obj/structure/closet/crate/critter/CritCrate = Crate
 		if(CritCrate.content_mob)
 			var/mob/crittername = CritCrate.content_mob
 			slip.info += "<li>[crittername.declent_ru(NOMINATIVE)]</li>"
@@ -396,13 +396,13 @@
 	slip.info += "</ul><br>"
 	slip.info += "ПРОВЕРЬТЕ СОДЕРЖИМОЕ И ПОСТАВЬТЕ ПЕЧАТЬ ПОД ЛИНИЕЙ, ЧТОБЫ ПОДТВЕРДИТЬ КОРРЕКТНОСТЬ МАНИФЕСТА<hr>" // And now this is actually meaningful.
 	slip.loc = Crate
-	if(istype(Crate, /obj/structure/closet/crate))
+	if(is_crate(Crate))
 		var/obj/structure/closet/crate/CR = Crate
 		CR.manifest = slip
 		CR.update_icon(UPDATE_OVERLAYS)
 		CR.announce_beacons = object.announce_beacons.Copy()
-	if(istype(Crate, /obj/structure/largecrate))
-		var/obj/structure/largecrate/LC = Crate
+	if(istype(Crate, /obj/structure/closet/crate/large))
+		var/obj/structure/closet/crate/large/LC = Crate
 		LC.manifest = slip
 		LC.update_icon(UPDATE_OVERLAYS)
 
@@ -467,7 +467,7 @@
 /obj/machinery/computer/supplycomp/attack_hand(mob/user as mob)
 	if(!allowed(user) && !isobserver(user))
 		user.balloon_alert(user, "отказано в доступе!")
-		playsound(src, pick('sound/machines/button.ogg', 'sound/machines/button_alternate.ogg', 'sound/machines/button_meloboom.ogg'), 20)
+		playsound(src, SFX_BUTTON_DENIED, 20)
 		return 1
 
 	if(..())

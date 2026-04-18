@@ -82,7 +82,7 @@
 			return
 		var/cooldown = ckey_to_cooldown[source.ckey] - world.time
 		if(cooldown > 0)
-			var/ceil_cooldown = CEILING(cooldown * 0.1, 1)
+			var/ceil_cooldown = ceil(cooldown * 0.1)
 			to_chat(source, span_warning("Управление командами будет доступно через [ceil_cooldown] секунд[DECL_SEC_MIN(ceil_cooldown)]."))
 			return MOB_DEADSAY_SIGNAL_INTERCEPT
 		ckey_to_cooldown[source.ckey] = world.time + input_cooldown
@@ -205,7 +205,7 @@
 		return
 
 	if(!(user in orbiters))
-		examine_list += span_deadsay(span_bold("Прыгнете на н[GEND_HIS_HER(object)]] и осмотрите снова, чтобы увидеть список доступных команд."))
+		examine_list += span_deadsay(span_bold("Прыгнете на н[GEND_HIS_HER(object)] и осмотрите снова, чтобы увидеть список доступных команд."))
 		return
 
 	var/input_cooldown_s = input_cooldown * 0.1

@@ -27,6 +27,7 @@
 
 /obj/item/organ/internal/cyberimp/arm/Destroy()
 	QDEL_NULL(active_item)
+	QDEL_LIST(items_list)
 	hand = null
 	return ..()
 
@@ -78,6 +79,8 @@
 /obj/item/organ/internal/cyberimp/arm/emp_act(severity)
 	if(emp_proof)
 		return
+	if(emp_shielded(severity))
+		return
 	if(prob(15/severity) && owner)
 		to_chat(owner, span_warning("[declent_ru(NOMINATIVE)] поражён ЭМИ импульсом!"))
 		// give the owner an idea about why his implant is glitching
@@ -112,7 +115,7 @@
 	owner.drop_item_ground(active_item, force = TRUE, silent = TRUE)
 	active_item.forceMove(src)
 	active_item = null
-	playsound(get_turf(owner), src.sound_off, 50, TRUE)
+	playsound(get_turf(owner), sound_off, 50, TRUE)
 	return TRUE
 
 /obj/item/organ/internal/cyberimp/arm/proc/Extend(obj/item/augment)
@@ -148,7 +151,7 @@
 	owner.visible_message(span_notice("[owner] extends [active_item] from [owner.p_their()] [parent_organ_zone == BODY_ZONE_R_ARM ? "right" : "left"] arm."),
 		span_notice("You extend [active_item] from your [parent_organ_zone == BODY_ZONE_R_ARM ? "right" : "left"] arm."),
 		span_italics("You hear a short mechanical noise."))
-	playsound(get_turf(owner), src.sound_on, 50, TRUE)
+	playsound(get_turf(owner), sound_on, 50, TRUE)
 
 /obj/item/organ/internal/cyberimp/arm/ui_action_click(mob/user, datum/action/action, leftclick)
 	if(crit_fail || (!active_item && !length(contents)))
@@ -190,9 +193,11 @@
 /obj/item/organ/internal/cyberimp/arm/gun/emp_act(severity)
 	if(emp_proof)
 		return
+	if(emp_shielded(severity))
+		return
 	if(prob(30/severity) && owner && !crit_fail)
 		Retract()
-		owner.visible_message(span_danger("A loud bang comes from [owner]\'s [parent_organ_zone == BODY_ZONE_R_ARM ? "right" : "left"] arm!"))
+		owner.visible_message(span_danger("A loud bang comes from [owner]'s [parent_organ_zone == BODY_ZONE_R_ARM ? "right" : "left"] arm!"))
 		playsound(get_turf(owner), 'sound/weapons/flashbang.ogg', 100, TRUE)
 		to_chat(owner, span_userdanger("You feel an explosion erupt inside your [parent_organ_zone == BODY_ZONE_R_ARM ? "right" : "left"] arm as your implant breaks!"))
 		owner.adjust_fire_stacks(20)
@@ -296,7 +301,8 @@
 
 /obj/item/organ/internal/cyberimp/arm/flash/Extend(obj/item/item)
 	. = ..()
-	active_item.set_light(7, l_on = TRUE)
+	active_item.set_light_range(7)
+	active_item.set_light_on(TRUE)
 
 /obj/item/organ/internal/cyberimp/arm/flash/Retract()
 	if(!active_item || (active_item in src))
@@ -360,6 +366,8 @@
 	parent_organ_zone = BODY_ZONE_L_ARM
 
 /obj/item/organ/internal/cyberimp/arm/toolset/mantisblade/emp_act(severity)
+	if(emp_shielded(severity))
+		return
 	..()
 
 	if(crit_fail || emp_proof)
@@ -423,6 +431,8 @@
 	// also so IPCs don't also catch on fire and fall even more apart upon EMP
 	if(emp_proof)
 		return
+	if(emp_shielded(severity))
+		return
 	damage = 1
 	crit_fail = TRUE
 
@@ -439,7 +449,7 @@
 	item_flags = NOBLUDGEON
 	var/drawing_power = FALSE
 
-/obj/item/apc_powercord/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+/obj/item/apc_powercord/afterattack(atom/target, mob/user, proximity_flag, list/modifiers, status)
 	if(!isapc(target) || !ishuman(user) || !proximity_flag)
 		return ..()
 	if(drawing_power)

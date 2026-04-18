@@ -40,7 +40,7 @@
 				return FALSE
 
 			var/static/list/cardinal_directions = list("[NORTH]" = TRUE, "[EAST]" = TRUE, "[SOUTH]" = TRUE, "[WEST]" = TRUE)
-			if(!cardinal_directions["[direction]"] || adjacent_turf.blocks_air || !current_turf.CanAtmosPass(adjacent_turf))
+			if(!cardinal_directions["[direction]"] || adjacent_turf.blocks_air || !current_turf.CanAtmosPass(direction))
 				continue
 
 			turfs_to_process += adjacent_turf
@@ -251,7 +251,7 @@
 						copiedobjs += DuplicateObject(M, perfect_copy, newloc = X)
 
 					for(var/V in T.vars)
-						if(!(V in list("type","loc","locs","vars", "parent", "parent_type","verbs","ckey","key","x","y","z","destination_z", "destination_x", "destination_y","contents", "luminosity", "group")))
+						if(!(V in list("type","loc","locs","vars", "parent", "parent_type", "pixloc", "verbs", "ckey", "key", "x", "y", "z","destination_z", "destination_x", "destination_y","contents", "luminosity", "group")))
 							X.vars[V] = T.vars[V]
 
 					toupdate += X
@@ -298,6 +298,19 @@
 			turfs += zlevel_turfs
 
 	return turfs
+
+///Takes: list of area types
+///Returns: all mobs that are in an area type
+/proc/mobs_in_area_type(list/area/checked_areas)
+	var/list/mobs_in_area = list()
+	for(var/mob/living/mob as anything in GLOB.mob_living_list)
+		if(QDELETED(mob))
+			continue
+		for(var/area in checked_areas)
+			if(istype(get_area(mob), area))
+				mobs_in_area += mob
+				break
+	return mobs_in_area
 
 ///Takes: Area type as text string or as typepath OR an instance of the area.
 ///Returns: A list of all areas of that type in the world.
